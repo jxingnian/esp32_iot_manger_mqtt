@@ -20,7 +20,7 @@ menu "IoT Manager Configuration"
 
     config IOT_MQTT_PASSWORD
         string "MQTT Password"
-        default "bo0NfopYCDRPuAW1GpgZ"
+        default "jYMtkKCNBj4ucwkPBryC"
         help
             Password for MQTT authentication.
             后台系统MQTT密码.
