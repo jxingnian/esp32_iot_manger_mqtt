@@ -37,8 +37,8 @@ static void app_mqtt_data_callback(const char *topic, int topic_len,
     ESP_LOGI(TAG, "数据: %.*s", data_len, data);
     ESP_LOGI(TAG, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
     
-    // 检查是否是命令主题
-    char expected_topic[128];
+    // 检查是否是命令主题（使用静态缓冲区）
+    static char expected_topic[128];
     snprintf(expected_topic, sizeof(expected_topic), "device/%s/command", APP_DEVICE_ID);
     
     if (strncmp(topic, expected_topic, topic_len) == 0) {
@@ -150,28 +150,30 @@ static void report_task(void *pvParameters)
         if (iot_manager_is_connected()) {
             // 构建设备数据JSON
             cJSON *data = cJSON_CreateObject();
-            cJSON_AddStringToObject(data, "device_id", APP_DEVICE_ID);
-            cJSON_AddNumberToObject(data, "timestamp", esp_timer_get_time() / 1000);
-            cJSON_AddNumberToObject(data, "uptime", esp_timer_get_time() / 1000000);
-            cJSON_AddNumberToObject(data, "free_heap", esp_get_free_heap_size());
-            cJSON_AddNumberToObject(data, "report_count", report_count++);
-            
-            // 这里可以添加你的传感器数据
-            // cJSON_AddNumberToObject(data, "temperature", get_temperature());
-            // cJSON_AddNumberToObject(data, "humidity", get_humidity());
-            
-            char *data_str = cJSON_PrintUnformatted(data);
-            if (data_str) {
-                int msg_id = iot_manager_report_properties(data_str);
-                if (msg_id >= 0) {
-                    ESP_LOGI(TAG, "📤 数据上报成功 #%d (msg_id=%d)", report_count, msg_id);
-                } else {
-                    ESP_LOGW(TAG, "数据上报失败");
+            if (data) {
+                cJSON_AddStringToObject(data, "device_id", APP_DEVICE_ID);
+                cJSON_AddNumberToObject(data, "timestamp", esp_timer_get_time() / 1000);
+                cJSON_AddNumberToObject(data, "uptime", esp_timer_get_time() / 1000000);
+                cJSON_AddNumberToObject(data, "free_heap", esp_get_free_heap_size());
+                cJSON_AddNumberToObject(data, "report_count", report_count++);
+                
+                // 这里可以添加你的传感器数据
+                // cJSON_AddNumberToObject(data, "temperature", get_temperature());
+                // cJSON_AddNumberToObject(data, "humidity", get_humidity());
+                
+                char *data_str = cJSON_PrintUnformatted(data);
+                if (data_str) {
+                    int msg_id = iot_manager_report_properties(data_str);
+                    if (msg_id >= 0) {
+                        ESP_LOGI(TAG, "📤 数据上报成功 #%d (msg_id=%d)", report_count, msg_id);
+                    } else {
+                        ESP_LOGW(TAG, "数据上报失败");
+                    }
+                    free(data_str);
                 }
-                free(data_str);
+                
+                cJSON_Delete(data);
             }
-            
-            cJSON_Delete(data);
         } else {
             ESP_LOGD(TAG, "等待MQTT连接...");
         }
@@ -186,7 +188,8 @@ static void report_task(void *pvParameters)
  */
 void app_start_report_task(void)
 {
-    xTaskCreate(report_task, "report_task", 4096, NULL, 5, NULL);
+    // 增加栈大小到6KB，避免栈溢出
+    xTaskCreate(report_task, "report_task", 6144, NULL, 5, NULL);
     ESP_LOGI(TAG, "数据上报任务已创建（间隔: %d秒）", REPORT_INTERVAL_SEC);
 }
 

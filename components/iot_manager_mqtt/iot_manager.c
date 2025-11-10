@@ -78,19 +78,25 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base,
         ESP_LOGI(TAG, "MQTT已连接到服务器");
         is_connected = true;
         
-        // 自动订阅命令主题
-        char command_topic[128];
-        snprintf(command_topic, sizeof(command_topic), 
-                CONFIG_IOT_COMMAND_TOPIC_TEMPLATE, manager_config.device_id);
-        iot_manager_subscribe(command_topic, 1);
-        ESP_LOGI(TAG, "已订阅命令主题: %s", command_topic);
+        // 自动订阅命令主题（使用动态内存）
+        char *command_topic = malloc(128);
+        if (command_topic) {
+            snprintf(command_topic, 128, 
+                    CONFIG_IOT_COMMAND_TOPIC_TEMPLATE, manager_config.device_id);
+            iot_manager_subscribe(command_topic, 1);
+            ESP_LOGI(TAG, "已订阅命令主题: %s", command_topic);
+            free(command_topic);
+        }
         
-        // 上报设备上线消息
-        char online_msg[256];
-        snprintf(online_msg, sizeof(online_msg), 
-                "{\"device_id\":\"%s\",\"status\":\"online\",\"timestamp\":%lld}",
-                manager_config.device_id, esp_timer_get_time() / 1000);
-        iot_manager_report_status(online_msg);
+        // 上报设备上线消息（使用动态内存）
+        char *online_msg = malloc(256);
+        if (online_msg) {
+            snprintf(online_msg, 256, 
+                    "{\"device_id\":\"%s\",\"status\":\"online\",\"timestamp\":%lld}",
+                    manager_config.device_id, esp_timer_get_time() / 1000);
+            iot_manager_report_status(online_msg);
+            free(online_msg);
+        }
         break;
 
     case MQTT_EVENT_DISCONNECTED:
@@ -188,9 +194,9 @@ esp_err_t iot_manager_init(const iot_manager_config_t *config)
     }
 #endif
 
-    // 配置遗嘱消息
-    char will_topic[128];
-    char will_message[256];
+    // 配置遗嘱消息（使用静态内存以避免栈溢出）
+    static char will_topic[128];
+    static char will_message[256];
     snprintf(will_topic, sizeof(will_topic), 
             CONFIG_IOT_STATUS_TOPIC_TEMPLATE, manager_config.device_id);
     snprintf(will_message, sizeof(will_message), 
@@ -331,7 +337,8 @@ bool iot_manager_is_connected(void)
  */
 int iot_manager_report_status(const char *status_json)
 {
-    char topic[128];
+    // 使用静态缓冲区避免栈使用
+    static char topic[128];
     snprintf(topic, sizeof(topic), CONFIG_IOT_STATUS_TOPIC_TEMPLATE, 
             manager_config.device_id);
     return iot_manager_publish(topic, status_json, 0, 1, 0);
@@ -342,7 +349,8 @@ int iot_manager_report_status(const char *status_json)
  */
 int iot_manager_report_properties(const char *properties_json)
 {
-    char topic[128];
+    // 使用静态缓冲区避免栈使用
+    static char topic[128];
     snprintf(topic, sizeof(topic), CONFIG_IOT_PROPERTY_TOPIC_TEMPLATE, 
             manager_config.device_id);
     return iot_manager_publish(topic, properties_json, 0, 1, 0);
@@ -353,8 +361,9 @@ int iot_manager_report_properties(const char *properties_json)
  */
 int iot_manager_reply_command(const char *command_id, int result, const char *message)
 {
-    char topic[128];
-    char reply_json[512];
+    // 使用静态缓冲区避免栈使用
+    static char topic[128];
+    static char reply_json[512];
     
     snprintf(topic, sizeof(topic), CONFIG_IOT_REPLY_TOPIC_TEMPLATE, 
             manager_config.device_id);
