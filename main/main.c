@@ -2,8 +2,8 @@
  * @Author: jxingnian j_xingnian@163.com
  * @Date: 2025-01-01 11:27:58
  * @LastEditors: xingnina j_xingnian@163.com
- * @LastEditTime: 2025-01-03 14:50:33
- * @FilePath: \EspWifiNetworkConfig\main\main.c
+ * @LastEditTime: 2025-11-10
+ * @FilePath: \esp_mqtt\main\main.c
  * @Description: WiFi配网主程序
  */
 
@@ -15,6 +15,8 @@
 #include "esp_spiffs.h"
 #include "wifi_manager.h"
 #include "http_server.h"
+#include "app/app_manager.h"
+
 static const char *TAG = "main";
 
 // 初始化SPIFFS
@@ -54,6 +56,11 @@ static esp_err_t init_spiffs(void)
 
 void app_main(void)
 {    
+    ESP_LOGI(TAG, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    ESP_LOGI(TAG, "  ESP32 IoT设备管理系统");
+    ESP_LOGI(TAG, "  Author: 星年");
+    ESP_LOGI(TAG, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    
     // 初始化NVS
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -61,15 +68,27 @@ void app_main(void)
         ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
+    ESP_LOGI(TAG, "✅ NVS初始化完成");
 
     // 初始化SPIFFS
     ESP_ERROR_CHECK(init_spiffs());
+    ESP_LOGI(TAG, "✅ SPIFFS初始化完成");
 
+    // 初始化应用管理器
+    ESP_ERROR_CHECK(app_manager_init());
+    
+    // 设置WiFi连接成功回调
+    wifi_set_connected_callback(app_on_wifi_connected);
+    
     // 初始化并启动WiFi AP
-    ESP_LOGI(TAG, "Starting WiFi in AP mode");
+    ESP_LOGI(TAG, "启动WiFi (AP+STA模式)");
     ESP_ERROR_CHECK(wifi_init_softap());
 
     // 启动HTTP服务器
     ESP_ERROR_CHECK(start_webserver());
-    ESP_LOGI(TAG, "System initialized successfully");
+    
+    ESP_LOGI(TAG, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    ESP_LOGI(TAG, "  系统初始化完成");
+    ESP_LOGI(TAG, "  Web配置: http://192.168.4.1:8080");
+    ESP_LOGI(TAG, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 }

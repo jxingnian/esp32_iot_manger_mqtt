@@ -1,37 +1,29 @@
-menu "Example Configuration"
+menu "WiFi Configuration"
 
     config ESP_WIFI_SSID
-        string "WiFi SSID"
-        default "myssid"
+        string "WiFi SSID (AP Mode)"
+        default "ESP32-ConfigAP"
         help
-            SSID (network name) for the example to connect to.
+            SSID (network name) for the ESP32 Access Point.
 
     config ESP_WIFI_PASSWORD
-        string "WiFi Password"
-        default "mypassword"
+        string "WiFi Password (AP Mode)"
+        default "12345678"
         help
-            WiFi password (WPA or WPA2) for the example to use.
+            WiFi password (WPA or WPA2) for the ESP32 Access Point.
+            Minimum 8 characters required.
+
     config ESP_WIFI_CHANNEL
         int "WiFi Channel"
         range 1 13
         default 1
         help
-            WiFi channel (network channel) for the example to use.
+            WiFi channel (network channel) for the Access Point.
 
     config ESP_MAX_STA_CONN
         int "Maximal STA connections"
         default 4
         help
-            Max number of the STA connects to AP.
-   
-    config BROKER_URL
-        string "Broker URL"
-        default "mqtt://mqtt.eclipseprojects.io"
-        help
-            URL of the broker to connect to
-
-    config BROKER_URL_FROM_STDIN
-        bool
-        default y if BROKER_URL = "FROM_STDIN"
+            Max number of stations that can connect to the AP simultaneously.
         
 endmenu

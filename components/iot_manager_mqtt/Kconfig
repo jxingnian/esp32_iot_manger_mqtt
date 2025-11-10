@@ -1,0 +1,104 @@
+menu "IoT Manager Configuration"
+
+    config IOT_BROKER_URL
+        string "MQTT Broker URL"
+        default "mqtt://win.xingnian.vip:1883"
+        help
+            URL of the MQTT broker to connect to.
+            Format: mqtt://host:port or mqtts://host:port
+            Examples:
+              - mqtt://win.xingnian.vip:1883
+              - mqtts://broker.emqx.io:8883
+              - mqtt://192.168.1.100:1883
+
+    config IOT_MQTT_USERNAME
+        string "MQTT Username"
+        default "esp_xiaoya_cli"
+        help
+            Username for MQTT authentication.
+            后台系统中ESP32设备使用此用户名连接.
+
+    config IOT_MQTT_PASSWORD
+        string "MQTT Password"
+        default "bo0NfopYCDRPuAW1GpgZ"
+        help
+            Password for MQTT authentication.
+            后台系统MQTT密码.
+
+    config IOT_MQTT_PROTOCOL_V5
+        bool "Use MQTT Protocol v5"
+        default n
+        help
+            Enable MQTT v5 protocol support.
+            If disabled, MQTT v3.1.1 will be used.
+
+    menu "Topic Templates"
+
+        config IOT_STATUS_TOPIC_TEMPLATE
+            string "Device Status Topic Template"
+            default "device/%s/status"
+            help
+                Topic template for device status reporting.
+                Use %s as device_id placeholder.
+                Example: device/%s/status -> device/ESP32_001/status
+                后台订阅: device/+/status
+
+        config IOT_PROPERTY_TOPIC_TEMPLATE
+            string "Device Property Topic Template"
+            default "device/%s/data"
+            help
+                Topic template for device property/data reporting.
+                Use %s as device_id placeholder.
+                Example: device/%s/data -> device/ESP32_001/data
+                后台订阅: device/+/data
+
+        config IOT_COMMAND_TOPIC_TEMPLATE
+            string "Command Topic Template"
+            default "device/%s/command"
+            help
+                Topic template for receiving commands from server.
+                Use %s as device_id placeholder.
+                Example: device/%s/command -> device/ESP32_001/command
+                后台发布命令到此主题
+
+        config IOT_REPLY_TOPIC_TEMPLATE
+            string "Command Reply Topic Template"
+            default "device/%s/reply"
+            help
+                Topic template for command execution result.
+                Use %s as device_id placeholder.
+
+        config IOT_EVENT_TOPIC_TEMPLATE
+            string "Device Event Topic Template"
+            default "device/%s/event"
+            help
+                Topic template for device event reporting.
+                Use %s as device_id placeholder.
+
+    endmenu
+
+    menu "Advanced Settings"
+
+        config IOT_MQTT_KEEPALIVE
+            int "MQTT Keep Alive (seconds)"
+            range 30 7200
+            default 120
+            help
+                MQTT keep alive interval in seconds.
+
+        config IOT_MQTT_BUFFER_SIZE
+            int "MQTT Buffer Size"
+            range 1024 65536
+            default 4096
+            help
+                Size of MQTT send/receive buffer in bytes.
+
+        config IOT_ENABLE_AUTO_RECONNECT
+            bool "Enable Auto Reconnect"
+            default y
+            help
+                Automatically reconnect when connection is lost.
+
+    endmenu
+
+endmenu

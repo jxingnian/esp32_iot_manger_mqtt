@@ -9,7 +9,6 @@
 #include "lwip/err.h"
 #include "lwip/sys.h"
 #include "wifi_manager.h"
-#include "mqtt_xn.h"
 // WiFi配置参数
 #define EXAMPLE_ESP_WIFI_SSID      CONFIG_ESP_WIFI_SSID        // WiFi名称
 #define EXAMPLE_ESP_WIFI_PASS      CONFIG_ESP_WIFI_PASSWORD    // WiFi密码
@@ -20,6 +19,9 @@ static const char *TAG = "wifi_manager";  // 日志标签
 
 #define MAX_RETRY_COUNT 5
 static int s_retry_num = 0;
+
+// WiFi连接成功回调函数
+static wifi_connected_callback_t wifi_connected_cb = NULL;
 
 // WiFi事件处理函数
 static void wifi_event_handler(void* arg, esp_event_base_t event_base,
@@ -78,7 +80,10 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
                 nvs_commit(nvs_handle);
                 nvs_close(nvs_handle);
             }
-            mqtt5_app_start();
+            // 调用WiFi连接成功回调
+            if (wifi_connected_cb) {
+                wifi_connected_cb();
+            }
         }
     }
 }
@@ -227,4 +232,10 @@ esp_err_t wifi_scan_networks(wifi_ap_record_t **ap_records, uint16_t *ap_count)
     }
 
     return ESP_OK;
+}
+
+// 设置WiFi连接成功回调函数
+void wifi_set_connected_callback(wifi_connected_callback_t callback)
+{
+    wifi_connected_cb = callback;
 }
